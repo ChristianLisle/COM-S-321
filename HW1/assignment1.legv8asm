@@ -1,0 +1,167 @@
+// COM S 321 HW1 Group Assignment
+//
+//      NAME               ISU EMAIL
+// Christian Lisle -- calisle@iastate.edu
+// Carter Brimeyer -- carterjb@iastate.edu
+//
+// == How to run ==
+//
+// Using linux, download the Professor's legv8 assembly emulator, which can be found 
+// on the piazza, Programming Assignment 1 (@33) note. Put both of the files, 
+// assignment1.legv8asm and legv8emul in the same directory and open terminal to
+// that directory. To run the program, use the command, 
+//
+//	./legv8emul assignment1.legv8asm
+//
+// To launch the program.
+//
+// == What it does ==
+//
+// Program takes a strictly decreasing array and sorts it in an acsending order, using
+// selection sort. In this instance, the input array is [100, 90, 80, 70, 60, 50, 40,
+// 30, 20, 10] and after being sorted becomes [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].
+// Programmed in legv8 assembly and makes use of each of its conventions.
+//
+//
+// == Register Key == 
+// X0: ----
+// X1: Number of elements in array
+// X2: SORT's current index
+// X3: SWAP's element A index
+// X4: SWAP's element B index
+// X5: Return address (Base Array Address)
+// X6: Smallest element value - return address for FIND_SMALLEST
+// X7: Smallest element index - return address for FIND_SMALLEST
+
+MAIN:
+	BL FILL // Initialize array (array builder)
+	DUMP // Uncomment this to see what the main memory (array) looks like before calling sort
+
+	SUBI SP, SP, #32 // Create room for LR Register on Stack
+	ADD X19, SP, XZR // Set X19 as reference of Stack Pointer
+
+	// Selection Sort
+	BL SORT
+
+	// End program
+	ADDI SP, SP, #32 // Remove space from stack
+	DUMP
+	B EXIT
+FILL:
+	// Fill the array at base register X5 with 10 integers [100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+	ADDI X9, XZR, #100
+	STUR X9, [X5, #0]
+
+	ADDI X9, XZR, #90
+	STUR X9, [X5, #8]
+
+	ADDI X9, XZR, #80
+	STUR X9, [X5, #16]
+
+	ADDI X9, XZR, #70
+	STUR X9, [X5, #24]
+
+	ADDI X9, XZR, #60
+	STUR X9, [X5, #32]
+
+	ADDI X9, XZR, #50
+	STUR X9, [X5, #40]
+
+	ADDI X9, XZR, #40
+	STUR X9, [X5, #48]
+
+	ADDI X9, XZR, #30
+	STUR X9, [X5, #56]
+
+	ADDI X9, XZR, #20
+	STUR X9, [X5, #64]
+
+	ADDI X9, XZR, #10
+	STUR X9, [X5, #72]
+
+	ADDI X1, XZR, #10 // Set X1 (n) = 10
+
+	BR LR
+
+SORT:
+	// Begin by storing the Return address (LR) to the Stack. This allows for further calls to procedures (i.e., calling BL SWAP overrides LR, so if it's in the stack it can be retrieved)
+	ADDI X9, LR, #0
+	STUR X9, [X19, #0]
+
+	ADDI X2, XZR, #0 // Set X2 (index used to iterate through array. SORT contains a loop)
+	LOOP:
+		BL FIND_SMALLEST
+		BL SWAP
+
+		// Increment index (X2) and determine next action required within LOOP (loop again or exit loop)
+		ADDI X2, X2, #1
+    	SUB X13, X1, X2
+    	CBNZ X13, LOOP // Loop again - continue sort
+
+		// Retrieve LR from stack and branch to return address
+		LDUR LR, [X19, #0]
+    	BR LR // exit SORT
+
+SWAP:
+	// Swap two elements A and B
+	// Parameters:
+	// 		X5 --- array base address
+	// 		X2 --- index for element A (current index)
+	//		X7 --- index for element B (smallest element)
+	// Returns:
+	// 		corresponding (updated) array at X5
+
+	// Load values A and B
+	LSL X14, X2, #3
+	LSL X13, X7, #3
+	ADD X9, X5, X14
+	ADD X10, X5, X13
+	LDUR X11, [X9, #0]
+	LDUR X12, [X10, #0]
+
+	// Swap values A and B
+	STUR X11, [X10, #0]
+	STUR X12, [X9, #0]
+
+	BR LR // Exit SWAP
+
+FIND_SMALLEST:
+	// Iterate through and return index of smallest element (starting at current index from SORT)
+	// Parameters:
+	// 		X5 --- array base address
+	// 		X1 --- number of elements in array
+	// 		X2 --- index to begin search at (current index)
+	// Returns:
+	// 		X6 --- Smallest element
+	// 		X7 --- Smallest element index
+
+	// Set initial smallest value (when searching from index X2 and up, index X2 is the first value looked at and therefore the smallest)
+	ADD X9, XZR, X2
+	LSL X10, X9, #3
+	ADD X10, X5, X10
+	LDUR X6, [X10, #0] // Store first (to be) searched element as initial smallest element
+	ADD X7, XZR, X9 // Store first (to be) searched element index as initial smallest element index
+
+	SMALLEST_LOOP:
+
+		LSL X10, X9, #3
+		ADD X10, X5, X10
+		LDUR X11, [X10, #0] // X11 = current value to check
+
+    	SUBS X12, X6, X11 // Check if X11 < X6 (smallest known element)
+    	B.LT SKIP_ELEMENT // Branch to SKIP_ELEMENT if X11 is not new smallest element
+
+		ADDI X6, X11, #0 // Set smallest element
+		ADD X7, X9, XZR // Set smallest element index
+
+		SKIP_ELEMENT:
+			// This branch determines the next action required within the SMALLEST_LOOP (loop again or exit loop)
+			// This branch is skipped to when the current index is not smaller than the previously known smallest element
+			// It is also accessed after a new smallest element is set
+		
+    		ADDI X9, X9, #1
+			SUB X13, X1, X9
+			CBNZ X13, SMALLEST_LOOP // Loop again
+			BR LR // Exit FIND_SMALLEST
+
+EXIT:
