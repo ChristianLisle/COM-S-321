@@ -39,4 +39,4 @@ View the full assignment prompt [here](HW2/HW2.md).
 
 
 ****
-These homework assignments were completed with the help of [Carter Brimeyer](https://github.com/carterjbrim).
+These homework assignments were completed with the help of [Carter Brimeyer](https://github.com/carterbrimeyer).
