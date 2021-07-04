@@ -36,3 +36,7 @@ View the full assignment prompt [here](HW1/HW1.md).
 Create a LEGv8 dissassembler. A dissassembler reads a binary file and converts it into LEGv8 code.
 
 View the full assignment prompt [here](HW2/HW2.md).
+
+
+****
+These homework assignments were completed with the help of [Carter Brimeyer](https://github.com/carterjbrim).
